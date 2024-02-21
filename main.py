@@ -71,7 +71,7 @@ def save_concat_image(filename, fiedler_vector, dt, act_val, alpha=0.15):
 
     im = Image.fromarray((comb_image * 255).astype(np.uint8))
     im.save('Res/av-' + str(act_val) + '___now_time-' + str(time.time()).split('.')[0] +
-            '___exec_time-' + str(dt)[:5] + "sec___v4___" + filename.split('\\')[1])
+            '___exec_time-' + str(dt)[:5] + "sec___v5___" + filename.split('\\')[1])
 
 
 def solve_sparse(a, b):
@@ -104,7 +104,7 @@ def calc_min_eig_vector(sparse_matrix):
 
 def calc_fiedler_vector(filename, act_val):
     rgb = io.imread(filename)
-    lab = color.rgb2lab(rgb)
+    lab = color.rgb2hsv(rgb)
     sparse_laplacian = make_sparse_laplacian(lab, activate_value=act_val)
 
     return calc_min_eig_vector(sparse_laplacian)
@@ -112,11 +112,11 @@ def calc_fiedler_vector(filename, act_val):
 
 if __name__ == '__main__':
     dir_name = 'C:\\Users\\Arseny\\Documents\\Prog\\PythonProjects\\MinCut\\Ref'
-    path_list = pathlib.Path(dir_name).glob('**/church.jpg')
+    path_list = pathlib.Path(dir_name).glob('**/ars_moscow-city.jpg')
     for path in path_list:
         file_name = "Ref\\" + str(path).split('\\Ref\\')[1]
 
-        color_activate_value = 0.75
+        color_activate_value = 0.01
 
         start_time = time.time()
         fiedler_vec = calc_fiedler_vector(file_name, color_activate_value)
