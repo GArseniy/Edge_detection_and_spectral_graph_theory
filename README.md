@@ -1,1 +1,1 @@
-# Edge_detection_and_spectral_graph_theory
+# 2024 MSU: Edge detection using spectral graph theory
