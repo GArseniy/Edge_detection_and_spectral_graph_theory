@@ -27,7 +27,7 @@ def make_sparse_laplacian(lab, rad=1, activate_value=15):
                                   (lab[i - rad + k][j - rad + p][1] - lab[i][j][1]) ** 2 +
                                   (lab[i - rad + k][j - rad + p][2] - lab[i][j][2]) ** 2) ** 0.5
 
-                    if color_diff > activate_value:
+                    if color_diff < activate_value:
                         continue
 
                     row[it] = i * w + j
@@ -69,7 +69,7 @@ def save_concat_image(filename, fiedler_vector, dt, act_val, alpha=0.15):
 
     im = Image.fromarray((comb_image * 255).astype(np.uint8))
     im.save('Res/av-' + str(act_val) + '___now_time-' + str(time.time()).split('.')[0] +
-            '___exec_time-' + str(dt)[:5] + "sec___v6___" + filename.split('\\')[1])
+            '___exec_time-' + str(dt)[:5] + "sec___v7___" + filename.split('\\')[1])
 
 
 def solve_sparse(a, b):
@@ -110,7 +110,7 @@ def calc_fiedler_vector(filename, act_val):
 
 if __name__ == '__main__':
     dir_name = 'C:\\Users\\Arseny\\Documents\\Prog\\PythonProjects\\MinCut\\Ref'
-    path_list = pathlib.Path(dir_name).glob('**/apple.jpg')
+    path_list = pathlib.Path(dir_name).glob('**/moscow-city.jpg')
     for path in path_list:
         file_name = "Ref\\" + str(path).split('\\Ref\\')[1]
 
