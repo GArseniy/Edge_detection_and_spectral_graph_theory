@@ -1,37 +1,38 @@
-import skimage.color as color
-import skimage.io as io
-import PIL.Image as Image
-import scipy.sparse as sparse
-import scipy.linalg as la
-import numpy as np
 import pathlib
 import time
 
+import PIL.Image as Image
+import numpy as np
+import scipy.linalg as la
+import scipy.sparse as sparse
+import skimage.color as color
+import skimage.io as io
 
-def make_sparse_laplacian(lab, rad=1, activate_value=15):
-    h, w = np.shape(lab)[:2]
-    cnt_not_zeroes = ((2 * rad + 1) ** 2 - 1) * (w - 2 * rad) * (h - 2 * rad)
+ITER1 = 50
+ITER2 = 20
+
+
+def make_sparse_laplacian(grayscale, activate_value=15):
+    h, w = np.shape(grayscale)[:2]
+    cnt_not_zeroes = 8 * (w - 2) * (h - 2)
 
     data = np.zeros(cnt_not_zeroes)
     row = np.zeros(cnt_not_zeroes)
     col = np.zeros(cnt_not_zeroes)
 
     it = 0
-    for i in range(0, h - rad):
-        for j in range(0, w - rad):
-            for k in range(rad, 2 * rad + 1):
-                for p in range(rad, 2 * rad + 1):
-                    if k == p:
+    for i in range(0, h - 1):
+        for j in range(0, w - 1):
+            for k in range(0, 2):
+                for p in range(0, 2):
+                    if k == 0 and p == 0:
                         continue
-                    color_diff = ((lab[i - rad + k][j - rad + p][0] - lab[i][j][0]) ** 2 +
-                                  (lab[i - rad + k][j - rad + p][1] - lab[i][j][1]) ** 2 +
-                                  (lab[i - rad + k][j - rad + p][2] - lab[i][j][2]) ** 2) ** 0.5
 
-                    if color_diff < activate_value:
+                    if abs(grayscale[i + k][j + p] - grayscale[i][j]) < activate_value:
                         continue
 
                     row[it] = i * w + j
-                    col[it] = (i - rad + k) * w + (j - rad + p)
+                    col[it] = (i + k) * w + (j + p)
                     data[it] = 1
                     it += 1
 
@@ -68,8 +69,8 @@ def save_concat_image(filename, fiedler_vector, dt, act_val, alpha=0.15):
     comb_image[:, :, :, ] = (alpha * rgb[:, :, :, ] / 256) + ((1 - alpha) * dst[:, :, :, ] / 256)
 
     im = Image.fromarray((comb_image * 255).astype(np.uint8))
-    im.save('Res/av-' + str(act_val) + '___now_time-' + str(time.time()).split('.')[0] +
-            '___exec_time-' + str(dt)[:5] + "sec___v7___" + filename.split('\\')[1])
+    im.save('Res/moscow/av-' + str(act_val) + '___now_time-' + str(time.time()).split('.')[0] +
+            '___exec_time-' + str(dt)[:5] + "sec___v9_" + str(ITER1) + "_" + str(ITER2) + "___" + filename.split('\\')[1])
 
 
 def solve_sparse(a, b):
@@ -77,7 +78,7 @@ def solve_sparse(a, b):
     x = np.random.rand(n)
     x /= la.norm(x)
 
-    for i in range(10):
+    for i in range(ITER1):
         y = b - a * x
         a_y = a * y
         t = np.dot(y, a_y) / np.dot(a_y, a_y)
@@ -87,34 +88,54 @@ def solve_sparse(a, b):
     return x
 
 
-def calc_min_eig_vector(sparse_matrix):
+def calc_min_eig_vector(sparse_matrix, filename):
     n = sparse_matrix.shape[0]
     x = np.random.randn(n)
     x /= la.norm(x)
 
-    for i in range(10):
+    for i in range(ITER2):
         y = solve_sparse(sparse_matrix, x)
         y /= la.norm(y)
         x = y
+        save_concat_image(filename, x, i, 0)
 
     return x
 
 
 def calc_fiedler_vector(filename, act_val):
     rgb = io.imread(filename)
-    lab = color.rgb2lab(rgb)
+    lab = color.rgb2gray(rgb)
     sparse_laplacian = make_sparse_laplacian(lab, activate_value=act_val)
 
-    return calc_min_eig_vector(sparse_laplacian)
+    return calc_min_eig_vector(sparse_laplacian, filename)
+
+
+def open_cv_edge_detection(filename):
+    import cv2 as cv
+    from matplotlib import pyplot as plt
+    img = cv.imread(filename, cv.IMREAD_GRAYSCALE)
+    assert img is not None, "file could not be read, check with os.path.exists()"
+    edges = cv.Canny(img, 100, 200)
+    plt.subplot(121), plt.imshow(img, cmap='gray')
+    plt.title('Original Image'), plt.xticks([]), plt.yticks([])
+    plt.subplot(122), plt.imshow(edges, cmap='gray')
+    plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
+    plt.show()
 
 
 if __name__ == '__main__':
+    color_activate_value = 0.007
+
     dir_name = 'C:\\Users\\Arseny\\Documents\\Prog\\PythonProjects\\MinCut\\Ref'
     path_list = pathlib.Path(dir_name).glob('**/moscow-city.jpg')
     for path in path_list:
         file_name = "Ref\\" + str(path).split('\\Ref\\')[1]
 
-        color_activate_value = 1
+        # start_time = time.time()
+        # open_cv_edge_detection(file_name)
+        # end_time = time.time()
+        #
+        # print(end_time - start_time)
 
         start_time = time.time()
         fiedler_vec = calc_fiedler_vector(file_name, color_activate_value)
